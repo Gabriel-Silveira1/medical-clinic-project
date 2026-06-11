@@ -22,7 +22,7 @@ public class Patient implements Serializable {
 
     }
 
-    public Patient(long id, String name, String cpf, String email, String phone, LocalDate birthDate) {
+    public Patient(Long id, String name, String cpf, String email, String phone, LocalDate birthDate) {
         this.id = id;
         this.name = name;
         this.cpf = cpf;
