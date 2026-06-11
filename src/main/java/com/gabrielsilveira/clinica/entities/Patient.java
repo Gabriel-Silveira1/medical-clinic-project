@@ -1,11 +1,17 @@
 package com.gabrielsilveira.clinica.entities;
 
+import jakarta.persistence.*;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.Objects;
 
+@Entity
+@Table(name = "tb_patient")
 public class Patient implements Serializable {
-    private long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     private String name;
     private String cpf;
     private String email;
@@ -85,4 +91,6 @@ public class Patient implements Serializable {
     public int hashCode() {
         return Objects.hashCode(id);
     }
+
+
 }
