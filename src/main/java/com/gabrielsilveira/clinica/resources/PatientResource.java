@@ -1,19 +1,25 @@
 package com.gabrielsilveira.clinica.resources;
 
 import com.gabrielsilveira.clinica.entities.Patient;
+import com.gabrielsilveira.clinica.services.PatientService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping(value = "/patients")
 public class PatientResource {
+
+    @Autowired
+    private PatientService patientService;
+
     @GetMapping
-    public ResponseEntity<Patient> findAll() {
-        Patient p = new Patient(1L, "João Silva", "123.456.789-00", "joaosilva@gmail.com", "(17) 99123-4567", LocalDate.of(1996, 9, 17));
-        return ResponseEntity.ok().body(p);
+    public ResponseEntity<List<Patient>> findAll() {
+        List<Patient> patients = patientService.findAll();
+        return ResponseEntity.ok().body(patients);
     }
 }
