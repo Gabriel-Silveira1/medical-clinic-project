@@ -24,7 +24,7 @@ public class Doctor implements Serializable {
 
     }
 
-    public Doctor(Long id, String name, String email, String crm, String phone, Specialty specialty) {
+    public Doctor(Long id, String name, String crm, String email, String phone, Specialty specialty) {
         this.id = id;
         this.name = name;
         this.email = email;
