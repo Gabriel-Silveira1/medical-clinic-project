@@ -1,7 +1,10 @@
 package com.gabrielsilveira.clinica.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -13,6 +16,10 @@ public class Specialty implements Serializable {
     private Long id;
     private String name;
     private String description;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "specialty")
+    private List<Doctor> doctors = new ArrayList<>();
 
     public Specialty() {
     }
