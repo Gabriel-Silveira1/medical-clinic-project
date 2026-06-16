@@ -1,8 +1,7 @@
 package com.gabrielsilveira.clinica.config;
 
-import com.gabrielsilveira.clinica.entities.Doctor;
-import com.gabrielsilveira.clinica.entities.Patient;
-import com.gabrielsilveira.clinica.entities.Specialty;
+import com.gabrielsilveira.clinica.entities.*;
+import com.gabrielsilveira.clinica.repositories.AppointmentRepository;
 import com.gabrielsilveira.clinica.repositories.DoctorRepository;
 import com.gabrielsilveira.clinica.repositories.PatientRepository;
 import com.gabrielsilveira.clinica.repositories.SpecialtyRepository;
@@ -11,6 +10,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Arrays;
 
@@ -25,6 +25,9 @@ public class TestConfig implements CommandLineRunner {
 
     @Autowired
     private DoctorRepository doctorRepository;
+
+    @Autowired
+    private AppointmentRepository appointmentRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -41,5 +44,10 @@ public class TestConfig implements CommandLineRunner {
         Doctor d2 = new Doctor(null, "Dr. Ana Souza", "CRM-SP 54321", "ana@clinic.com", "11999990002", sp2);
         Doctor d3 = new Doctor(null, "Dr. Beatriz Nunes", "CRM-SP 99999", "bia@clinic.com", "11999990003", sp3);
         doctorRepository.saveAll(Arrays.asList(d1, d2, d3));
+
+        Appointment a1 = new Appointment(null, Instant.parse("2024-03-10T09:00:00Z"), AppointmentStatus.COMPLETED, p1, d1);
+        Appointment a2 = new Appointment(null, Instant.parse("2024-03-11T14:00:00Z"), AppointmentStatus.SCHEDULED, p2, d2);
+        Appointment a3 = new Appointment(null, Instant.parse("2024-03-12T10:30:00Z"), AppointmentStatus.CONFIRMED, p1, d3);
+        appointmentRepository.saveAll(Arrays.asList(a1, a2, a3));
     }
 }
