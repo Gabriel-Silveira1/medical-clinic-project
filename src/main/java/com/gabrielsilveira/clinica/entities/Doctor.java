@@ -1,8 +1,11 @@
 package com.gabrielsilveira.clinica.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -19,6 +22,14 @@ public class Doctor implements Serializable {
     @ManyToOne
     @JoinColumn(name = "specialty_id")
     private Specialty specialty;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "doctor")
+    private List<Appointment> appointments = new ArrayList<>();
+
+    public List<Appointment> getAppointments() {
+        return appointments;
+    }
 
     public Doctor() {
 

@@ -1,9 +1,12 @@
 package com.gabrielsilveira.clinica.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -17,6 +20,14 @@ public class Patient implements Serializable {
     private String email;
     private String phone;
     private LocalDate birthDate;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "patient")
+    private List<Appointment> appointments = new ArrayList<>();
+
+    public List<Appointment> getAppointments() {
+        return appointments;
+    }
 
     public Patient() {
 
