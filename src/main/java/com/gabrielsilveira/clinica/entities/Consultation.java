@@ -53,6 +53,14 @@ public class Consultation implements Serializable {
         this.prescription = prescription;
     }
 
+    public Appointment getAppointment() {
+        return appointment;
+    }
+
+    public void setAppointment(Appointment appointment) {
+        this.appointment = appointment;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

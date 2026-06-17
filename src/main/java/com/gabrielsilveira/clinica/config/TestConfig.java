@@ -1,10 +1,7 @@
 package com.gabrielsilveira.clinica.config;
 
 import com.gabrielsilveira.clinica.entities.*;
-import com.gabrielsilveira.clinica.repositories.AppointmentRepository;
-import com.gabrielsilveira.clinica.repositories.DoctorRepository;
-import com.gabrielsilveira.clinica.repositories.PatientRepository;
-import com.gabrielsilveira.clinica.repositories.SpecialtyRepository;
+import com.gabrielsilveira.clinica.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
@@ -29,6 +26,9 @@ public class TestConfig implements CommandLineRunner {
     @Autowired
     private AppointmentRepository appointmentRepository;
 
+    @Autowired
+    private ConsultationRepository consultationRepository;
+
     @Override
     public void run(String... args) throws Exception {
         Patient p1 = new Patient(null, "João Silva", "111.222.333-44", "joao@gmail.com", "11988880001", LocalDate.of(1990, 5, 15));
@@ -49,5 +49,8 @@ public class TestConfig implements CommandLineRunner {
         Appointment a2 = new Appointment(null, Instant.parse("2024-03-11T14:00:00Z"), AppointmentStatus.SCHEDULED, p2, d2);
         Appointment a3 = new Appointment(null, Instant.parse("2024-03-12T10:30:00Z"), AppointmentStatus.CONFIRMED, p1, d3);
         appointmentRepository.saveAll(Arrays.asList(a1, a2, a3));
+
+        Consultation c1 = new Consultation(null, "Hypertension stage 1", "Losartan 50mg", a1);
+        consultationRepository.save(c1);
     }
 }
