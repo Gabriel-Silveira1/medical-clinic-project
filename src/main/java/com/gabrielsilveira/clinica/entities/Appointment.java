@@ -25,6 +25,10 @@ public class Appointment implements Serializable {
     @JoinColumn(name = "doctor_id")
     private Doctor doctor;
 
+    @JsonIgnore
+    @OneToOne(mappedBy = "appointment")
+    private Consultation consultation;
+
     public Appointment() {
     }
 
@@ -76,6 +80,14 @@ public class Appointment implements Serializable {
 
     public void setDoctor(Doctor doctor) {
         this.doctor = doctor;
+    }
+
+    public Consultation getConsultation() {
+        return consultation;
+    }
+
+    public void setConsultation(Consultation consultation) {
+        this.consultation = consultation;
     }
 
     @Override
