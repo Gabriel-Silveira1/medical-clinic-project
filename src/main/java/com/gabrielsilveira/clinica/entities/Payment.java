@@ -22,10 +22,11 @@ public class Payment implements Serializable {
     public Payment() {
     }
 
-    public Payment(Long id, Instant moment, Double amount) {
+    public Payment(Long id, Instant moment, Double amount, Consultation consultation) {
         this.id = id;
         this.moment = moment;
         this.amount = amount;
+        this.consultation = consultation;
     }
 
     public Long getId() {

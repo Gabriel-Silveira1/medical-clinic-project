@@ -29,6 +29,9 @@ public class TestConfig implements CommandLineRunner {
     @Autowired
     private ConsultationRepository consultationRepository;
 
+    @Autowired
+    private PaymentRepository paymentRepository;
+
     @Override
     public void run(String... args) throws Exception {
         Patient p1 = new Patient(null, "João Silva", "111.222.333-44", "joao@gmail.com", "11988880001", LocalDate.of(1990, 5, 15));
@@ -52,5 +55,8 @@ public class TestConfig implements CommandLineRunner {
 
         Consultation c1 = new Consultation(null, "Hypertension stage 1", "Losartan 50mg", a1);
         consultationRepository.save(c1);
+
+        Payment pay1 = new Payment(null, Instant.parse("2024-03-10T10:00:00Z"), 250.00, c1);
+        paymentRepository.save(pay1);
     }
 }
