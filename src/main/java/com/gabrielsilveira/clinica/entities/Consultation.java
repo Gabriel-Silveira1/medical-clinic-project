@@ -1,5 +1,6 @@
 package com.gabrielsilveira.clinica.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -18,6 +19,9 @@ public class Consultation implements Serializable {
     @JoinColumn(name = "appointment_id")
     private Appointment appointment;
 
+    @JsonIgnore
+    @OneToOne(mappedBy = "consultation")
+    private Payment payment;
 
     public Consultation() {
     }
@@ -59,6 +63,14 @@ public class Consultation implements Serializable {
 
     public void setAppointment(Appointment appointment) {
         this.appointment = appointment;
+    }
+
+    public Payment getPayment() {
+        return payment;
+    }
+
+    public void setPayment(Payment payment) {
+        this.payment = payment;
     }
 
     @Override
