@@ -1,6 +1,6 @@
-# coursejava
+# Medical Clinic System — REST API
 
-A study-oriented Spring Boot REST API that models a small e-commerce domain (users, categories, products, orders, order items and payments). The project is organized in a classic layered architecture and is intended as a hands-on reference for building, running and extending a Spring Boot application backed by JPA/Hibernate.
+A RESTful web service built with Spring Boot and JPA/Hibernate that models the core operations of a medical clinic: patients, doctors, specialties, appointments, consultations and payments. The project follows a classic layered architecture (Resource → Service → Repository) and covers the full development cycle — domain modelling, database configuration, CRUD operations and structured exception handling.
 
 ---
 
@@ -16,30 +16,27 @@ A study-oriented Spring Boot REST API that models a small e-commerce domain (use
 8. [REST API](#8-rest-api)
 9. [Error Handling](#9-error-handling)
 10. [Database Seeding](#10-database-seeding)
-11. [Tests](#11-tests)
-12. [Roadmap / Possible Improvements](#12-roadmap--possible-improvements)
+11. [Roadmap / Possible Improvements](#11-roadmap--possible-improvements)
 
 ---
 
 ## 1. Tech Stack
 
-| Layer            | Technology                                  |
-|------------------|---------------------------------------------|
-| Language         | Java 25                                     |
-| Framework        | Spring Boot 4.0.5 (Web MVC, Data JPA)       |
-| Persistence      | Hibernate / Jakarta Persistence (JPA)       |
-| Database (dev)   | PostgreSQL                                  |
-| Database (test)  | H2 (in-memory) + H2 Console                 |
-| Build Tool       | Maven (Maven Wrapper included)              |
-| JSON             | Jackson                                     |
-
-Key dependencies are declared in [pom.xml](pom.xml).
+| Layer            | Technology                                      |
+|------------------|-------------------------------------------------|
+| Language         | Java 21                                         |
+| Framework        | Spring Boot 4.x (Web MVC, Data JPA)             |
+| Persistence      | Hibernate / Jakarta Persistence (JPA)           |
+| Database (test)  | H2 (in-memory)                                  |
+| Database (prod)  | PostgreSQL                                      |
+| Build Tool       | Maven                                           |
+| JSON             | Jackson                                         |
 
 ---
 
 ## 2. Architecture
 
-The codebase follows a standard three-tier layered architecture, keeping each layer focused on a single responsibility:
+The codebase follows a three-tier layered architecture, keeping each layer focused on a single responsibility:
 
 ```
 HTTP Request
@@ -50,40 +47,53 @@ HTTP Request
 +------------------+                 +-----------------+                +-------------------+
         ^                                                                         |
         |                                                                         v
-        +-------------- @ControllerAdvice ←--- domain exception ---           Database
+        +-------------- @ControllerAdvice <--- domain exception ---           Database
 ```
 
-- **Resource** — `@RestController` classes under `resource/`. They expose HTTP endpoints, parse input and return `ResponseEntity`. They do **not** contain business logic.
-- **Service** — `@Component` classes under `services/`. They orchestrate business operations and translate persistence errors into domain exceptions.
-- **Repository** — Spring Data JPA interfaces under `repositories/`, extending `JpaRepository`.
-- **Domain exceptions** — `services/exceptions/` (`ResourceNotFoundException`, `DataBaseException`) are translated to HTTP responses by `resource/exceptions/ResourceExceptionHandler` (`@ControllerAdvice`).
+- **Resource** — `@RestController` classes that expose HTTP endpoints, parse input and return `ResponseEntity`. They contain no business logic.
+- **Service** — `@Service` classes that orchestrate business rules and translate persistence errors into domain exceptions.
+- **Repository** — Spring Data JPA interfaces extending `JpaRepository`, responsible solely for database access.
+- **Domain exceptions** — `services/exceptions/` (`ResourceNotFoundException`, `DatabaseException`) translated to HTTP responses by `ResourceExceptionHandler` (`@ControllerAdvice`).
 
 ---
 
 ## 3. Domain Model
 
-The domain represents an e-commerce flow where a `User` (client) places `Order`s, each composed of one or more `OrderItem`s referencing a `Product`. A `Product` belongs to one or more `Category`s. An `Order` may have an associated `Payment`.
+The domain models a medical clinic flow where a `Patient` schedules `Appointment`s with a `Doctor` of a given `Specialty`. A completed `Appointment` generates a `Consultation` with diagnosis and prescription, which may then have an associated `Payment`.
 
 ```
-   User 1 ---* Order 1 ---* OrderItem *--- 1 Product *---* Category
-                  |
-                  | 1
-                  v
-               Payment
+Specialty 1 ---* Doctor 1 ---* Appointment *--- 1 Patient
+                                    |
+                                    | 1
+                                    v
+                              Consultation
+                                    |
+                                    | 1
+                                    v
+                                 Payment
 ```
 
 ### Entities
 
-| Entity        | File                                                         | Notes                                                                   |
-|---------------|--------------------------------------------------------------|-------------------------------------------------------------------------|
-| `User`        | [User.java](src/main/java/com/coursejava/coursejava/entities/User.java) | Client of the system; owns a list of orders.                            |
-| `Order`       | [Order.java](src/main/java/com/coursejava/coursejava/entities/Order.java) | Holds `moment`, `OrderStatus`, client reference, items and payment.     |
-| `OrderItem`   | [OrderItem.java](src/main/java/com/coursejava/coursejava/entities/OrderItem.java) | Uses an `@EmbeddedId` composite key (`OrderItemPk`) of order + product. |
-| `OrderItemPk` | [OrderItemPk.java](src/main/java/com/coursejava/coursejava/entities/pk/OrderItemPk.java) | Composite primary key for `OrderItem`.                                  |
-| `Product`     | [Product.java](src/main/java/com/coursejava/coursejava/entities/Product.java) | Many-to-many with `Category` via `tb_product_category`.                 |
-| `Category`    | [Category.java](src/main/java/com/coursejava/coursejava/entities/Category.java) | Inverse side of the product/category relation.                          |
-| `Payment`     | [Payment.java](src/main/java/com/coursejava/coursejava/entities/Payment.java) | One-to-one with `Order`, sharing primary key via `@MapsId`.             |
-| `OrderStatus` | [OrderStatus.java](src/main/java/com/coursejava/coursejava/entities/enums/OrderStatus.java) | Enum: `WAITING_PAYMENT`, `PAID`, `SHIPPED`, `DELIVERED`, `CANCELED`.    |
+| Entity               | Notes                                                                          |
+|----------------------|--------------------------------------------------------------------------------|
+| `Patient`            | Person seeking medical care; associated with multiple appointments.            |
+| `Doctor`             | Medical professional; belongs to a specialty and has multiple appointments.     |
+| `Specialty`          | Medical specialty (e.g. Cardiology); groups doctors.                           |
+| `Appointment`        | Scheduled visit linking a patient and a doctor; holds moment and status.       |
+| `Consultation`       | Result of a completed appointment; contains diagnosis and prescription.        |
+| `Payment`            | Financial record of a consultation; one-to-one with `Consultation`.            |
+| `AppointmentStatus`  | Enum: `SCHEDULED`, `CONFIRMED`, `COMPLETED`, `CANCELLED`.                      |
+
+### Relationships
+
+| Relationship                     | Type         |
+|----------------------------------|--------------|
+| `Specialty` → `Doctor`           | One-to-Many  |
+| `Doctor` → `Appointment`         | One-to-Many  |
+| `Patient` → `Appointment`        | One-to-Many  |
+| `Appointment` → `Consultation`   | One-to-One   |
+| `Consultation` → `Payment`       | One-to-One   |
 
 ---
 
@@ -92,101 +102,91 @@ The domain represents an e-commerce flow where a `User` (client) places `Order`s
 ```
 src/
 └── main/
-    ├── java/com/coursejava/coursejava/
-    │   ├── CoursejavaApplication.java          # Spring Boot entry point
+    ├── java/com/gabrielsilveira/clinica/
+    │   ├── ClinicaApplication.java          # Spring Boot entry point
     │   ├── config/
-    │   │   └── TestConfig.java                 # Seed data (profile: test)
+    │   │   └── TestConfig.java              # Seed data (profile: test)
     │   ├── entities/
-    │   │   ├── User.java
-    │   │   ├── Order.java
-    │   │   ├── OrderItem.java
-    │   │   ├── Product.java
-    │   │   ├── Category.java
+    │   │   ├── Patient.java
+    │   │   ├── Doctor.java
+    │   │   ├── Specialty.java
+    │   │   ├── Appointment.java
+    │   │   ├── Consultation.java
     │   │   ├── Payment.java
-    │   │   ├── enums/OrderStatus.java
-    │   │   └── pk/OrderItemPk.java
-    │   ├── repositories/                       # Spring Data JPA interfaces
-    │   ├── services/                           # Business orchestration
-    │   │   └── exceptions/                     # Domain exceptions
-    │   └── resource/                           # REST controllers
-    │       └── exceptions/                     # ControllerAdvice + StandardError
+    │   │   └── AppointmentStatus.java       # Enum with integer code mapping
+    │   ├── repositories/                    # Spring Data JPA interfaces
+    │   ├── services/                        # Business logic
+    │   │   └── exceptions/                  # Domain exceptions
+    │   └── resources/                       # REST controllers
+    │       └── exceptions/                  # ControllerAdvice + StandardError
     └── resources/
-        ├── application.properties              # Active profile, generic config
-        ├── application-dev.properties          # PostgreSQL (dev)
-        └── application-test.properties         # H2 in-memory (test)
+        ├── application.properties           # Active profile, generic config
+        └── application-test.properties      # H2 in-memory (test)
 ```
 
 ---
 
 ## 5. Prerequisites
 
-- **JDK 25** (the `java.version` declared in `pom.xml`).
-- **Maven** is not required — the project ships with the Maven Wrapper (`mvnw`, `mvnw.cmd`).
-- For the `dev` profile only: **PostgreSQL 12+** with a database named `springboot_course` reachable on `localhost:5432`.
+- **JDK 21+**
+- **Maven 3.8+** (or use the Maven Wrapper included in the project)
+- For the production profile only: **PostgreSQL 12+** with a database named `clinic_db` on `localhost:5432`
 
 ---
 
 ## 6. Configuration & Profiles
 
-The active profile is selected in [application.properties](src/main/resources/application.properties):
+The active profile is selected in `application.properties`:
 
 ```properties
-spring.application.name=coursejava
-spring.profiles.active=dev
+spring.application.name=clinica
+spring.profiles.active=test
 spring.jpa.open-in-view=true
 ```
 
-### `dev` profile — PostgreSQL
-
-File: [application-dev.properties](src/main/resources/application-dev.properties)
-
-- `spring.datasource.url=jdbc:postgresql://localhost:5432/springboot_course`
-- DDL auto-generation: `update`
-- Hibernate SQL logging enabled.
-
-> **Heads-up:** the credentials checked in for this profile are local development defaults. For any non-local environment, override them through environment variables, a Spring config server, or your secret manager — never commit real credentials.
-
 ### `test` profile — H2 in-memory
 
-File: [application-test.properties](src/main/resources/application-test.properties)
+File: `application-test.properties`
 
-- In-memory database `jdbc:h2:mem:testdb`
-- H2 console exposed at `/h2-console`
-- Used together with [TestConfig.java](src/main/java/com/coursejava/coursejava/config/TestConfig.java) to populate seed data on startup.
+```properties
+# DATASOURCE
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.url=jdbc:h2:mem:testdb
+spring.datasource.username=sa
+spring.datasource.password=
 
-To switch profile, change `spring.profiles.active` or pass `--spring.profiles.active=<profile>` at runtime.
+# JPA, SQL
+spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
+spring.jpa.defer-datasource-initialization=true
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+```
+
+The test profile uses an in-memory H2 database — no external setup required. All data is populated on startup via `TestConfig` and is lost when the application stops.
+
+### `prod` profile — PostgreSQL
+
+For production, create an `application-prod.properties` with your PostgreSQL credentials and set `spring.profiles.active=prod`.
 
 ---
 
 ## 7. Running the Application
 
-From the project root:
-
-### Windows (PowerShell)
-
-```powershell
-# Run with the active profile from application.properties (dev by default)
-.\mvnw.cmd spring-boot:run
-
-# Run with the in-memory H2 profile (no PostgreSQL required)
-.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=test"
-```
-
-### Linux / macOS
-
 ```bash
+# Clone the repository
+git clone git@github.com:Gabriel-Silveira1/medical-clinic-project.git
+cd medical-clinic-project
+
+# Run with H2 in-memory (no external database required)
 ./mvnw spring-boot:run
-./mvnw spring-boot:run -Dspring-boot.run.profiles=test
+
+# Or with Maven installed globally
+mvn spring-boot:run
 ```
 
-### Build a runnable jar
+The application will start on `http://localhost:8080`.
 
-```bash
-./mvnw clean package
-java -jar target/coursejava-0.0.1-SNAPSHOT.jar --spring.profiles.active=test
-```
-
-The application listens on `http://localhost:8080`.
+On startup (test profile), seed data is automatically inserted: 2 patients, 3 specialties, 3 doctors, 3 appointments, 1 consultation and 1 payment.
 
 ---
 
@@ -194,48 +194,63 @@ The application listens on `http://localhost:8080`.
 
 Base URL: `http://localhost:8080`
 
-### Users — `/users`  (full CRUD)
+### Patients — `/patients` (full CRUD)
 
-| Method | Path           | Description           | Success      |
-|--------|----------------|-----------------------|--------------|
-| GET    | `/users`       | List all users        | `200 OK`     |
-| GET    | `/users/{id}`  | Find user by id       | `200 OK`     |
-| POST   | `/users`       | Create a new user     | `201 Created` (with `Location` header) |
-| PUT    | `/users/{id}`  | Update an existing user | `200 OK`   |
-| DELETE | `/users/{id}`  | Delete a user         | `204 No Content` |
+| Method | Path              | Description             | Status           |
+|--------|-------------------|-------------------------|------------------|
+| GET    | `/patients`       | List all patients        | `200 OK`         |
+| GET    | `/patients/{id}`  | Find patient by id       | `200 OK`         |
+| POST   | `/patients`       | Create a new patient     | `201 Created`    |
+| PUT    | `/patients/{id}`  | Update an existing patient | `200 OK`       |
+| DELETE | `/patients/{id}`  | Delete a patient         | `204 No Content` |
 
-### Products — `/products`  (read-only)
+### Doctors — `/doctors` (read)
 
-| Method | Path              | Description           |
-|--------|-------------------|-----------------------|
-| GET    | `/products`       | List all products     |
-| GET    | `/products/{id}`  | Find product by id    |
+| Method | Path            | Description        | Status   |
+|--------|-----------------|--------------------|----------|
+| GET    | `/doctors`      | List all doctors   | `200 OK` |
+| GET    | `/doctors/{id}` | Find doctor by id  | `200 OK` |
 
-### Orders — `/orders`  (read-only)
+### Specialties — `/specialties` (read)
 
-| Method | Path            | Description         |
-|--------|-----------------|---------------------|
-| GET    | `/orders`       | List all orders     |
-| GET    | `/orders/{id}`  | Find order by id    |
+| Method | Path                 | Description            | Status   |
+|--------|----------------------|------------------------|----------|
+| GET    | `/specialties`       | List all specialties   | `200 OK` |
+| GET    | `/specialties/{id}`  | Find specialty by id   | `200 OK` |
 
-### Categories — `/categories`  (read-only)
+### Appointments — `/appointments` (read)
 
-| Method | Path                | Description           |
-|--------|---------------------|-----------------------|
-| GET    | `/categories`       | List all categories   |
-| GET    | `/categories/{id}`  | Find category by id   |
+| Method | Path                  | Description             | Status   |
+|--------|-----------------------|-------------------------|----------|
+| GET    | `/appointments`       | List all appointments   | `200 OK` |
+| GET    | `/appointments/{id}`  | Find appointment by id  | `200 OK` |
 
-### Example request — create user
+### Consultations — `/consultations` (read)
+
+| Method | Path                   | Description              | Status   |
+|--------|------------------------|--------------------------|----------|
+| GET    | `/consultations`       | List all consultations   | `200 OK` |
+| GET    | `/consultations/{id}`  | Find consultation by id  | `200 OK` |
+
+### Payments — `/payments` (read)
+
+| Method | Path             | Description         | Status   |
+|--------|------------------|---------------------|----------|
+| GET    | `/payments`      | List all payments   | `200 OK` |
+| GET    | `/payments/{id}` | Find payment by id  | `200 OK` |
+
+### Example — create patient
 
 ```http
-POST /users
+POST /patients
 Content-Type: application/json
 
 {
-  "name": "Maria Brown",
-  "email": "maria@gmail.com",
-  "phone": "988888888",
-  "password": "123456"
+  "name": "Carlos Mendes",
+  "cpf": "999.888.777-66",
+  "email": "carlos@gmail.com",
+  "phone": "11977770001",
+  "birthDate": "1992-07-10"
 }
 ```
 
@@ -243,74 +258,85 @@ Response:
 
 ```http
 HTTP/1.1 201 Created
-Location: http://localhost:8080/users/3
+Location: http://localhost:8080/patients/3
 Content-Type: application/json
 
 {
   "id": 3,
-  "name": "Maria Brown",
-  "email": "maria@gmail.com",
-  "phone": "988888888",
-  "password": "123456"
+  "name": "Carlos Mendes",
+  "cpf": "999.888.777-66",
+  "email": "carlos@gmail.com",
+  "phone": "11977770001",
+  "birthDate": "1992-07-10"
 }
 ```
+
+### Example — update patient
+
+```http
+PUT /patients/3
+Content-Type: application/json
+
+{
+  "name": "Carlos Mendes",
+  "email": "carlos.novo@gmail.com",
+  "phone": "11977770002"
+}
+```
+
+> Note: `cpf` and `birthDate` are intentionally excluded from updates — these fields are immutable after registration.
 
 ---
 
 ## 9. Error Handling
 
-Domain exceptions are mapped to a consistent JSON payload by [`ResourceExceptionHandler`](src/main/java/com/coursejava/coursejava/resource/exceptions/ResourceExceptionHandler.java).
+All domain exceptions are intercepted by `ResourceExceptionHandler` (`@ControllerAdvice`) and returned as a consistent JSON payload.
 
 ### `StandardError` payload
 
 ```json
 {
-  "timestamp": "2026-05-06T13:45:12Z",
+  "timestamp": "2024-03-10T09:00:00Z",
   "status": 404,
   "error": "Resource not found",
-  "message": "Resource not found. Id 999",
-  "path": "/users/999"
+  "message": "Resource not found. Id 99",
+  "path": "/patients/99"
 }
 ```
 
-### Exception → HTTP status mapping
+### Exception mapping
 
-| Exception                    | HTTP status         | Trigger                                                  |
-|------------------------------|---------------------|----------------------------------------------------------|
-| `ResourceNotFoundException`  | `404 Not Found`     | `findById` / `update` / `delete` for an unknown id       |
-| `DataBaseException`          | `400 Bad Request`   | Database integrity violations (e.g. FK constraint)       |
+| Exception                   | HTTP Status         | Trigger                                                        |
+|-----------------------------|---------------------|----------------------------------------------------------------|
+| `ResourceNotFoundException` | `404 Not Found`     | `findById`, `update` or `delete` with a non-existent id        |
+| `DatabaseException`         | `400 Bad Request`   | Referential integrity violation (e.g. deleting a patient with appointments) |
 
 ---
 
 ## 10. Database Seeding
 
-When the application starts under the **`test`** profile, [TestConfig](src/main/java/com/coursejava/coursejava/config/TestConfig.java) populates the H2 database with example categories, products, users, orders, order items and a payment. This is convenient for local exploration and for issuing requests against the read-only endpoints without manual data entry.
+When running under the `test` profile, `TestConfig` populates the H2 database on startup with the following data:
 
-The **`dev`** profile does not run `TestConfig` — Hibernate runs with `ddl-auto=update`, but no seed data is inserted automatically.
+| Entity        | Records                                              |
+|---------------|------------------------------------------------------|
+| Patients      | João Silva, Fernanda Costa                           |
+| Specialties   | Cardiology, Orthopedics, Dermatology                 |
+| Doctors       | Dr. Carlos Lima, Dr. Ana Souza, Dr. Beatriz Nunes    |
+| Appointments  | 3 appointments across different statuses             |
+| Consultation  | 1 consultation with diagnosis and prescription       |
+| Payment       | 1 payment linked to the consultation                 |
 
----
-
-## 11. Tests
-
-Run the test suite with:
-
-```bash
-./mvnw test
-```
-
-Test scope dependencies (`spring-boot-starter-data-jpa-test`, `spring-boot-starter-webmvc-test`) are already declared in [pom.xml](pom.xml). The bundled smoke test lives at [CoursejavaApplicationTests.java](src/test/java/com/coursejava/coursejava/CoursejavaApplicationTests.java).
+This allows you to immediately test all endpoints after startup without manual data entry.
 
 ---
 
-## 12. Roadmap / Possible Improvements
+## 11. Roadmap / Possible Improvements
 
-The project intentionally stays close to the layered Spring Boot tutorial style. Natural next steps to harden it for production use include:
-
-- **Validation** — apply `@Valid` and Bean Validation annotations on request payloads.
-- **DTOs** — decouple the HTTP contract from JPA entities (input/output DTOs at controller boundaries).
-- **Security** — replace plain-text password storage with a hashing scheme (BCrypt) and add authentication/authorization (e.g. Spring Security + JWT — the `jwt.*` properties already hint at this).
-- **Configuration secrets** — move database credentials out of `application-dev.properties` into environment variables or a vault.
-- **Pagination** — return `Page<T>` from list endpoints instead of unbounded `List<T>`.
-- **Observability** — structured logging, metrics (Micrometer), and request tracing.
-- **OpenAPI** — publish a generated API spec (e.g. springdoc-openapi).
-- **Test coverage** — add unit tests for services and slice tests (`@WebMvcTest`, `@DataJpaTest`) for the REST and persistence layers.
+- **Validation** — apply `@Valid` and Bean Validation annotations on request payloads
+- **DTOs** — decouple HTTP contracts from JPA entities using input/output DTOs
+- **Full CRUD** — extend CRUD operations to Doctor, Specialty, Appointment and Consultation endpoints
+- **Security** — add authentication and authorization with Spring Security + JWT
+- **PostgreSQL deploy** — configure production profile and deploy to a cloud provider
+- **Pagination** — return `Page<T>` from list endpoints instead of unbounded `List<T>`
+- **OpenAPI** — publish a generated API spec with springdoc-openapi
+- **Test coverage** — add unit tests for services and slice tests (`@WebMvcTest`, `@DataJpaTest`)
