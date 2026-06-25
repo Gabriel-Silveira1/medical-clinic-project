@@ -31,7 +31,7 @@ public class AppointmentService {
         return appointmentRepository.save(obj);
     }
 
-    public Appointment delete (Long id) {
+    public void delete (Long id) {
         try {
             appointmentRepository.deleteById(id);
         } catch (EmptyResultDataAccessException e) {
