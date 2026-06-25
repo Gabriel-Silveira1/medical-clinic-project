@@ -40,7 +40,7 @@ public class AppointmentResource {
     }
 
     @DeleteMapping(value = "/{id}")
-    public ResponseEntity<Void> deleteById(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         appointmentService.delete(id);
         return ResponseEntity.noContent().build();
     }
