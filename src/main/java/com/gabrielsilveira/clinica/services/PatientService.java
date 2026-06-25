@@ -52,7 +52,7 @@ public class PatientService {
         }
     }
 
-    public void updateData(Patient entity, Patient obj) {
+    private void updateData(Patient entity, Patient obj) {
         entity.setName(obj.getName());
         entity.setEmail(obj.getEmail());
         entity.setPhone(obj.getPhone());
