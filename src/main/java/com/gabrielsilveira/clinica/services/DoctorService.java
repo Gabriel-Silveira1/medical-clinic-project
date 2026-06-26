@@ -1,7 +1,11 @@
 package com.gabrielsilveira.clinica.services;
 
+import com.gabrielsilveira.clinica.dto.DoctorRequestDTO;
+import com.gabrielsilveira.clinica.dto.DoctorResponseDTO;
 import com.gabrielsilveira.clinica.entities.Doctor;
+import com.gabrielsilveira.clinica.entities.Specialty;
 import com.gabrielsilveira.clinica.repositories.DoctorRepository;
+import com.gabrielsilveira.clinica.repositories.SpecialtyRepository;
 import com.gabrielsilveira.clinica.services.exceptions.DatabaseException;
 import com.gabrielsilveira.clinica.services.exceptions.ResourceNotFoundException;
 import jakarta.persistence.EntityNotFoundException;
@@ -18,17 +22,32 @@ public class DoctorService {
     @Autowired
     private DoctorRepository doctorRepository;
 
-    public List<Doctor> findAll() {
-        return doctorRepository.findAll();
+    @Autowired
+    private SpecialtyRepository specialtyRepository;
+
+    public List<DoctorResponseDTO> findAll() {
+        return doctorRepository.findAll()
+                .stream()
+                .map(DoctorResponseDTO::new)
+                .toList();
     }
 
-    public Doctor findById(Long id) {
+    public DoctorResponseDTO findById(Long id) {
         Optional<Doctor> obj = doctorRepository.findById(id);
-        return obj.orElseThrow(() -> new ResourceNotFoundException(id));
+        Doctor doctor = obj.orElseThrow(() -> new ResourceNotFoundException(id));
+        return new DoctorResponseDTO(doctor);
     }
 
-    public Doctor insert(Doctor obj) {
-        return doctorRepository.save(obj);
+    public DoctorResponseDTO insert(DoctorRequestDTO dto) {
+        Doctor doctor = new Doctor();
+        doctor.setName(dto.getName());
+        doctor.setCrm(dto.getCrm());
+        doctor.setEmail(dto.getEmail());
+        doctor.setPhone(dto.getPhone());
+        Specialty specialty = specialtyRepository.getReferenceById(dto.getSpecialtyId());
+        doctor.setSpecialty(specialty);
+        doctor = doctorRepository.save(doctor);
+        return new DoctorResponseDTO(doctor);
     }
 
     public void delete (Long id) {
@@ -41,20 +60,16 @@ public class DoctorService {
         }
     }
 
-    public Doctor update(Long id, Doctor obj) {
+    public DoctorResponseDTO update(Long id, DoctorRequestDTO dto) {
         try {
             Doctor doctor = doctorRepository.getReferenceById(id);
-            updateData(doctor, obj);
-            return doctorRepository.save(doctor);
+            doctor.setName(dto.getName());
+            doctor.setCrm(dto.getCrm());
+            doctor.setEmail(dto.getEmail());
+            doctor.setPhone(dto.getPhone());
+            return new DoctorResponseDTO(doctorRepository.save(doctor));
         } catch (EntityNotFoundException e) {
             throw new ResourceNotFoundException(id);
         }
-    }
-
-    private void updateData(Doctor doctor, Doctor obj) {
-        doctor.setName(obj.getName());
-        doctor.setCrm(obj.getCrm());
-        doctor.setEmail(obj.getEmail());
-        doctor.setPhone(obj.getPhone());
     }
 }
