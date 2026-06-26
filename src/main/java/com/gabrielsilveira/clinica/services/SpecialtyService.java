@@ -1,5 +1,7 @@
 package com.gabrielsilveira.clinica.services;
 
+import com.gabrielsilveira.clinica.dto.SpecialtyRequestDTO;
+import com.gabrielsilveira.clinica.dto.SpecialtyResponseDTO;
 import com.gabrielsilveira.clinica.entities.Specialty;
 import com.gabrielsilveira.clinica.repositories.SpecialtyRepository;
 import com.gabrielsilveira.clinica.services.exceptions.DatabaseException;
@@ -19,20 +21,39 @@ public class SpecialtyService {
     @Autowired
     private SpecialtyRepository specialtyRepository;
 
-    public List<Specialty> findAll() {
-        return specialtyRepository.findAll();
+    public List<SpecialtyResponseDTO> findAll() {
+        return specialtyRepository.findAll()
+                .stream()
+                .map(SpecialtyResponseDTO::new)
+                .toList();
     }
 
-    public Specialty findById(Long id) {
+    public SpecialtyResponseDTO findById(Long id) {
         Optional<Specialty> obj = specialtyRepository.findById(id);
-        return obj.orElseThrow(() -> new ResourceNotFoundException(id));
+        Specialty specialty = obj.orElseThrow(() -> new ResourceNotFoundException(id));
+        return new SpecialtyResponseDTO(specialty);
     }
 
-    public Specialty insert(Specialty obj) {
-        return specialtyRepository.save(obj);
+    public SpecialtyResponseDTO insert(SpecialtyRequestDTO dto) {
+        Specialty specialty = new Specialty();
+        specialty.setName(dto.getName());
+        specialty.setDescription(dto.getDescription());
+        specialty = specialtyRepository.save(specialty);
+        return new SpecialtyResponseDTO(specialty);
     }
 
-    public void delete (Long id) {
+    public SpecialtyResponseDTO update(Long id, SpecialtyRequestDTO dto) {
+        try {
+            Specialty specialty = specialtyRepository.getReferenceById(id);
+            specialty.setName(dto.getName());
+            specialty.setDescription(dto.getDescription());
+            return new SpecialtyResponseDTO(specialtyRepository.save(specialty));
+        } catch (EntityNotFoundException e) {
+            throw new ResourceNotFoundException(id);
+        }
+    }
+
+    public void delete(Long id) {
         try {
             specialtyRepository.deleteById(id);
         } catch (EmptyResultDataAccessException e) {
@@ -40,20 +61,5 @@ public class SpecialtyService {
         } catch (DataIntegrityViolationException e) {
             throw new DatabaseException(e.getMessage());
         }
-    }
-
-    public Specialty update(Long id, Specialty obj) {
-        try {
-            Specialty specialty = specialtyRepository.getReferenceById(id);
-            updateData(specialty, obj);
-            return specialtyRepository.save(specialty);
-        } catch (EntityNotFoundException e) {
-            throw new ResourceNotFoundException(id);
-        }
-    }
-
-    private void updateData(Specialty specialty, Specialty obj) {
-        specialty.setName(obj.getName());
-        specialty.setDescription(obj.getDescription());
     }
 }
