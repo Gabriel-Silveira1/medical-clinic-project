@@ -1,5 +1,7 @@
 package com.gabrielsilveira.clinica.services;
 
+import com.gabrielsilveira.clinica.dto.PatientRequestDTO;
+import com.gabrielsilveira.clinica.dto.PatientResponseDTO;
 import com.gabrielsilveira.clinica.entities.Patient;
 import com.gabrielsilveira.clinica.repositories.PatientRepository;
 import com.gabrielsilveira.clinica.services.exceptions.DatabaseException;
@@ -19,17 +21,28 @@ public class PatientService {
     @Autowired
     private PatientRepository patientRepository;
 
-    public List<Patient> findAll() {
-        return patientRepository.findAll();
+    public List<PatientResponseDTO> findAll() {
+        return patientRepository.findAll()
+                .stream()
+                .map(PatientResponseDTO::new)
+                .toList();
     }
 
-    public Patient findById(Long id) {
+    public PatientResponseDTO findById(Long id) {
         Optional<Patient> obj = patientRepository.findById(id);
-        return obj.orElseThrow(() -> new ResourceNotFoundException(id));
+        Patient patient = obj.orElseThrow(() -> new ResourceNotFoundException(id));
+        return new PatientResponseDTO(patient);
     }
 
-    public Patient insert (Patient obj) {
-        return patientRepository.save(obj);
+    public PatientResponseDTO insert (PatientRequestDTO dto) {
+        Patient patient = new Patient();
+        patient.setName(dto.getName());
+        patient.setCpf(dto.getCpf());
+        patient.setEmail(dto.getEmail());
+        patient.setPhone(dto.getPhone());
+        patient.setBirthDate(dto.getBirthDate());
+        patient = patientRepository.save(patient);
+        return new PatientResponseDTO(patient);
     }
 
     public void delete (Long id) {
@@ -42,19 +55,15 @@ public class PatientService {
         }
     }
 
-    public Patient update (Long id, Patient obj) {
+    public PatientResponseDTO update (Long id, PatientRequestDTO dto) {
         try {
-            Patient entity = patientRepository.getReferenceById(id);
-            updateData(entity, obj);
-            return patientRepository.save(entity);
+            Patient patient = patientRepository.getReferenceById(id);
+            patient.setName(dto.getName());
+            patient.setEmail(dto.getEmail());
+            patient.setPhone(dto.getPhone());
+            return new PatientResponseDTO(patientRepository.save(patient));
         } catch (EntityNotFoundException e){
             throw new ResourceNotFoundException(id);
         }
-    }
-
-    private void updateData(Patient entity, Patient obj) {
-        entity.setName(obj.getName());
-        entity.setEmail(obj.getEmail());
-        entity.setPhone(obj.getPhone());
     }
 }

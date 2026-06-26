@@ -1,5 +1,7 @@
 package com.gabrielsilveira.clinica.resources;
 
+import com.gabrielsilveira.clinica.dto.PatientRequestDTO;
+import com.gabrielsilveira.clinica.dto.PatientResponseDTO;
 import com.gabrielsilveira.clinica.entities.Patient;
 import com.gabrielsilveira.clinica.services.PatientService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,20 +20,20 @@ public class PatientResource {
     private PatientService patientService;
 
     @GetMapping
-    public ResponseEntity<List<Patient>> findAll() {
-        List<Patient> patients = patientService.findAll();
+    public ResponseEntity<List<PatientResponseDTO>> findAll() {
+        List<PatientResponseDTO> patients = patientService.findAll();
         return ResponseEntity.ok().body(patients);
     }
 
     @GetMapping(value = "/{id}")
-    public ResponseEntity<Patient> findById(@PathVariable Long id) {
-        Patient obj = patientService.findById(id);
+    public ResponseEntity<PatientResponseDTO> findById(@PathVariable Long id) {
+        PatientResponseDTO obj = patientService.findById(id);
         return ResponseEntity.ok().body(obj);
     }
 
     @PostMapping
-    public ResponseEntity<Patient> insert(@RequestBody Patient obj) {
-        obj = patientService.insert(obj);
+    public ResponseEntity<PatientResponseDTO> insert(@RequestBody PatientRequestDTO dto) {
+        PatientResponseDTO obj = patientService.insert(dto);
         URI uri = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(obj.getId())
@@ -46,8 +48,8 @@ public class PatientResource {
     }
 
     @PutMapping(value = "/{id}")
-    public ResponseEntity<Patient> update(@PathVariable Long id, @RequestBody Patient obj) {
-        obj = patientService.update(id, obj);
+    public ResponseEntity<PatientResponseDTO> update(@PathVariable Long id, @RequestBody PatientRequestDTO dto) {
+        PatientResponseDTO obj = patientService.update(id, dto);
         return ResponseEntity.ok().body(obj);
     }
 }
