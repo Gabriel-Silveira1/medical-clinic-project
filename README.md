@@ -1,6 +1,6 @@
 # Medical Clinic System — REST API
 
-A RESTful web service built with Spring Boot and JPA/Hibernate that models the core operations of a medical clinic: patients, doctors, specialties, appointments, consultations and payments. The project follows a classic layered architecture (Resource → Service → Repository) and covers the full development cycle — domain modelling, database configuration, CRUD operations and structured exception handling.
+A RESTful web service built with Spring Boot and JPA/Hibernate that models the core operations of a medical clinic: patients, doctors, specialties, appointments, consultations and payments. The project follows a classic layered architecture (Resource → Service → Repository) and covers the full development cycle — domain modelling, database configuration, CRUD operations, structured exception handling and DTO-based data transfer.
 
 ---
 
@@ -50,9 +50,10 @@ HTTP Request
         +-------------- @ControllerAdvice <--- domain exception ---           Database
 ```
 
-- **Resource** — `@RestController` classes that expose HTTP endpoints, parse input and return `ResponseEntity`. They contain no business logic.
-- **Service** — `@Service` classes that orchestrate business rules and translate persistence errors into domain exceptions.
+- **Resource** — `@RestController` classes that expose HTTP endpoints, parse input via `RequestDTO` and return `ResponseDTO` wrapped in `ResponseEntity`. They contain no business logic.
+- **Service** — `@Service` classes that orchestrate business rules, convert between DTOs and entities, and translate persistence errors into domain exceptions.
 - **Repository** — Spring Data JPA interfaces extending `JpaRepository`, responsible solely for database access.
+- **DTOs** — `RequestDTO` classes define what data enters the API; `ResponseDTO` classes define what data leaves, keeping JPA entities internal and preventing over-exposure of sensitive fields.
 - **Domain exceptions** — `services/exceptions/` (`ResourceNotFoundException`, `DatabaseException`) translated to HTTP responses by `ResourceExceptionHandler` (`@ControllerAdvice`).
 
 ---
@@ -114,8 +115,21 @@ src/
     │   │   ├── Consultation.java
     │   │   ├── Payment.java
     │   │   └── AppointmentStatus.java       # Enum with integer code mapping
+    │   ├── dto/
+    │   │   ├── PatientRequestDTO.java
+    │   │   ├── PatientResponseDTO.java
+    │   │   ├── DoctorRequestDTO.java
+    │   │   ├── DoctorResponseDTO.java
+    │   │   ├── SpecialtyRequestDTO.java
+    │   │   ├── SpecialtyResponseDTO.java
+    │   │   ├── AppointmentRequestDTO.java
+    │   │   ├── AppointmentResponseDTO.java
+    │   │   ├── ConsultationRequestDTO.java
+    │   │   ├── ConsultationResponseDTO.java
+    │   │   ├── PaymentRequestDTO.java
+    │   │   └── PaymentResponseDTO.java
     │   ├── repositories/                    # Spring Data JPA interfaces
-    │   ├── services/                        # Business logic
+    │   ├── services/                        # Business logic + DTO conversion
     │   │   └── exceptions/                  # Domain exceptions
     │   └── resources/                       # REST controllers
     │       └── exceptions/                  # ControllerAdvice + StandardError
@@ -196,48 +210,63 @@ Base URL: `http://localhost:8080`
 
 ### Patients — `/patients` (full CRUD)
 
-| Method | Path              | Description             | Status           |
-|--------|-------------------|-------------------------|------------------|
-| GET    | `/patients`       | List all patients        | `200 OK`         |
-| GET    | `/patients/{id}`  | Find patient by id       | `200 OK`         |
-| POST   | `/patients`       | Create a new patient     | `201 Created`    |
-| PUT    | `/patients/{id}`  | Update an existing patient | `200 OK`       |
-| DELETE | `/patients/{id}`  | Delete a patient         | `204 No Content` |
+| Method | Path              | Description               | Status           |
+|--------|-------------------|---------------------------|------------------|
+| GET    | `/patients`       | List all patients          | `200 OK`         |
+| GET    | `/patients/{id}`  | Find patient by id         | `200 OK`         |
+| POST   | `/patients`       | Create a new patient       | `201 Created`    |
+| PUT    | `/patients/{id}`  | Update an existing patient | `200 OK`         |
+| DELETE | `/patients/{id}`  | Delete a patient           | `204 No Content` |
 
-### Doctors — `/doctors` (read)
+### Doctors — `/doctors` (full CRUD)
 
-| Method | Path            | Description        | Status   |
-|--------|-----------------|--------------------|----------|
-| GET    | `/doctors`      | List all doctors   | `200 OK` |
-| GET    | `/doctors/{id}` | Find doctor by id  | `200 OK` |
+| Method | Path             | Description                | Status           |
+|--------|------------------|----------------------------|------------------|
+| GET    | `/doctors`       | List all doctors           | `200 OK`         |
+| GET    | `/doctors/{id}`  | Find doctor by id          | `200 OK`         |
+| POST   | `/doctors`       | Create a new doctor        | `201 Created`    |
+| PUT    | `/doctors/{id}`  | Update an existing doctor  | `200 OK`         |
+| DELETE | `/doctors/{id}`  | Delete a doctor            | `204 No Content` |
 
-### Specialties — `/specialties` (read)
+### Specialties — `/specialties` (full CRUD)
 
-| Method | Path                 | Description            | Status   |
-|--------|----------------------|------------------------|----------|
-| GET    | `/specialties`       | List all specialties   | `200 OK` |
-| GET    | `/specialties/{id}`  | Find specialty by id   | `200 OK` |
+| Method | Path                  | Description                   | Status           |
+|--------|-----------------------|-------------------------------|------------------|
+| GET    | `/specialties`        | List all specialties          | `200 OK`         |
+| GET    | `/specialties/{id}`   | Find specialty by id          | `200 OK`         |
+| POST   | `/specialties`        | Create a new specialty        | `201 Created`    |
+| PUT    | `/specialties/{id}`   | Update an existing specialty  | `200 OK`         |
+| DELETE | `/specialties/{id}`   | Delete a specialty            | `204 No Content` |
 
-### Appointments — `/appointments` (read)
+### Appointments — `/appointments` (full CRUD)
 
-| Method | Path                  | Description             | Status   |
-|--------|-----------------------|-------------------------|----------|
-| GET    | `/appointments`       | List all appointments   | `200 OK` |
-| GET    | `/appointments/{id}`  | Find appointment by id  | `200 OK` |
+| Method | Path                    | Description                     | Status           |
+|--------|-------------------------|---------------------------------|------------------|
+| GET    | `/appointments`         | List all appointments           | `200 OK`         |
+| GET    | `/appointments/{id}`    | Find appointment by id          | `200 OK`         |
+| POST   | `/appointments`         | Create a new appointment        | `201 Created`    |
+| PUT    | `/appointments/{id}`    | Update an existing appointment  | `200 OK`         |
+| DELETE | `/appointments/{id}`    | Delete an appointment           | `204 No Content` |
 
-### Consultations — `/consultations` (read)
+### Consultations — `/consultations` (full CRUD)
 
-| Method | Path                   | Description              | Status   |
-|--------|------------------------|--------------------------|----------|
-| GET    | `/consultations`       | List all consultations   | `200 OK` |
-| GET    | `/consultations/{id}`  | Find consultation by id  | `200 OK` |
+| Method | Path                    | Description                      | Status           |
+|--------|-------------------------|----------------------------------|------------------|
+| GET    | `/consultations`        | List all consultations           | `200 OK`         |
+| GET    | `/consultations/{id}`   | Find consultation by id          | `200 OK`         |
+| POST   | `/consultations`        | Create a new consultation        | `201 Created`    |
+| PUT    | `/consultations/{id}`   | Update an existing consultation  | `200 OK`         |
+| DELETE | `/consultations/{id}`   | Delete a consultation            | `204 No Content` |
 
-### Payments — `/payments` (read)
+### Payments — `/payments` (full CRUD)
 
-| Method | Path             | Description         | Status   |
-|--------|------------------|---------------------|----------|
-| GET    | `/payments`      | List all payments   | `200 OK` |
-| GET    | `/payments/{id}` | Find payment by id  | `200 OK` |
+| Method | Path              | Description               | Status           |
+|--------|-------------------|---------------------------|------------------|
+| GET    | `/payments`       | List all payments         | `200 OK`         |
+| GET    | `/payments/{id}`  | Find payment by id        | `200 OK`         |
+| POST   | `/payments`       | Create a new payment      | `201 Created`    |
+| PUT    | `/payments/{id}`  | Update an existing payment| `200 OK`         |
+| DELETE | `/payments/{id}`  | Delete a payment          | `204 No Content` |
 
 ### Example — create patient
 
@@ -264,10 +293,43 @@ Content-Type: application/json
 {
   "id": 3,
   "name": "Carlos Mendes",
-  "cpf": "999.888.777-66",
   "email": "carlos@gmail.com",
   "phone": "11977770001",
   "birthDate": "1992-07-10"
+}
+```
+
+> Note: `cpf` is accepted on input but intentionally omitted from the response — sensitive fields are protected via dedicated `ResponseDTO` classes.
+
+### Example — create doctor
+
+```http
+POST /doctors
+Content-Type: application/json
+
+{
+  "name": "Dr. Ricardo Alves",
+  "crm": "CRM-SP 11111",
+  "email": "ricardo@clinic.com",
+  "phone": "11999990004",
+  "specialtyId": 1
+}
+```
+
+Response:
+
+```http
+HTTP/1.1 201 Created
+Location: http://localhost:8080/doctors/4
+Content-Type: application/json
+
+{
+  "id": 4,
+  "name": "Dr. Ricardo Alves",
+  "crm": "CRM-SP 11111",
+  "email": "ricardo@clinic.com",
+  "phone": "11999990004",
+  "specialtyName": "Cardiology"
 }
 ```
 
@@ -306,10 +368,10 @@ All domain exceptions are intercepted by `ResourceExceptionHandler` (`@Controlle
 
 ### Exception mapping
 
-| Exception                   | HTTP Status         | Trigger                                                        |
-|-----------------------------|---------------------|----------------------------------------------------------------|
-| `ResourceNotFoundException` | `404 Not Found`     | `findById`, `update` or `delete` with a non-existent id        |
-| `DatabaseException`         | `400 Bad Request`   | Referential integrity violation (e.g. deleting a patient with appointments) |
+| Exception                   | HTTP Status       | Trigger                                                                     |
+|-----------------------------|-------------------|-----------------------------------------------------------------------------|
+| `ResourceNotFoundException` | `404 Not Found`   | `findById`, `update` or `delete` with a non-existent id                     |
+| `DatabaseException`         | `400 Bad Request` | Referential integrity violation (e.g. deleting a patient with appointments) |
 
 ---
 
@@ -333,8 +395,6 @@ This allows you to immediately test all endpoints after startup without manual d
 ## 11. Roadmap / Possible Improvements
 
 - **Validation** — apply `@Valid` and Bean Validation annotations on request payloads
-- **DTOs** — decouple HTTP contracts from JPA entities using input/output DTOs
-- **Full CRUD** — extend CRUD operations to Doctor, Specialty, Appointment and Consultation endpoints
 - **Security** — add authentication and authorization with Spring Security + JWT
 - **PostgreSQL deploy** — configure production profile and deploy to a cloud provider
 - **Pagination** — return `Page<T>` from list endpoints instead of unbounded `List<T>`
