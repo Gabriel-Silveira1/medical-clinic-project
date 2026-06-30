@@ -1,6 +1,10 @@
 package com.gabrielsilveira.clinica.services;
 
+import com.gabrielsilveira.clinica.dto.PaymentRequestDTO;
+import com.gabrielsilveira.clinica.dto.PaymentResponseDTO;
+import com.gabrielsilveira.clinica.entities.Consultation;
 import com.gabrielsilveira.clinica.entities.Payment;
+import com.gabrielsilveira.clinica.repositories.ConsultationRepository;
 import com.gabrielsilveira.clinica.repositories.PaymentRepository;
 import com.gabrielsilveira.clinica.services.exceptions.DatabaseException;
 import com.gabrielsilveira.clinica.services.exceptions.ResourceNotFoundException;
@@ -15,23 +19,48 @@ import java.util.Optional;
 
 @Service
 public class PaymentService {
+
     @Autowired
     private PaymentRepository paymentRepository;
 
-    public List<Payment> findAll() {
-        return paymentRepository.findAll();
+    @Autowired
+    private ConsultationRepository consultationRepository;
+
+    public List<PaymentResponseDTO> findAll() {
+        return paymentRepository.findAll()
+                .stream()
+                .map(PaymentResponseDTO::new)
+                .toList();
     }
 
-    public Payment findById(Long id) {
+    public PaymentResponseDTO findById(Long id) {
         Optional<Payment> obj = paymentRepository.findById(id);
-        return obj.orElseThrow(() -> new ResourceNotFoundException(id));
+        Payment payment = obj.orElseThrow(() -> new ResourceNotFoundException(id));
+        return new PaymentResponseDTO(payment);
     }
 
-    public Payment insert(Payment obj) {
-        return paymentRepository.save(obj);
+    public PaymentResponseDTO insert(PaymentRequestDTO dto) {
+        Payment payment = new Payment();
+        payment.setMoment(dto.getMoment());
+        payment.setAmount(dto.getAmount());
+        Consultation consultation = consultationRepository.getReferenceById(dto.getConsultationId());
+        payment.setConsultation(consultation);
+        payment = paymentRepository.save(payment);
+        return new PaymentResponseDTO(payment);
     }
 
-    public void delete (Long id) {
+    public PaymentResponseDTO update(Long id, PaymentRequestDTO dto) {
+        try {
+            Payment payment = paymentRepository.getReferenceById(id);
+            payment.setMoment(dto.getMoment());
+            payment.setAmount(dto.getAmount());
+            return new PaymentResponseDTO(paymentRepository.save(payment));
+        } catch (EntityNotFoundException e) {
+            throw new ResourceNotFoundException(id);
+        }
+    }
+
+    public void delete(Long id) {
         try {
             paymentRepository.deleteById(id);
         } catch (EmptyResultDataAccessException e) {
@@ -39,20 +68,5 @@ public class PaymentService {
         } catch (DataIntegrityViolationException e) {
             throw new DatabaseException(e.getMessage());
         }
-    }
-
-    public Payment update(Long id, Payment obj) {
-        try {
-            Payment payment = paymentRepository.getReferenceById(id);
-            updateData(payment, obj);
-            return paymentRepository.save(payment);
-        } catch (EntityNotFoundException e) {
-            throw new ResourceNotFoundException(id);
-        }
-    }
-
-    private void updateData(Payment payment, Payment obj) {
-        payment.setMoment(obj.getMoment());
-        payment.setAmount(obj.getAmount());
     }
 }
