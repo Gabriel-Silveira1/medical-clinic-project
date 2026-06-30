@@ -1,6 +1,7 @@
 package com.gabrielsilveira.clinica.resources;
 
-import com.gabrielsilveira.clinica.entities.Consultation;
+import com.gabrielsilveira.clinica.dto.ConsultationRequestDTO;
+import com.gabrielsilveira.clinica.dto.ConsultationResponseDTO;
 import com.gabrielsilveira.clinica.services.ConsultationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -17,20 +18,20 @@ public class ConsultationResource {
     private ConsultationService consultationService;
 
     @GetMapping
-    public ResponseEntity<List<Consultation>> findAll() {
-        List<Consultation> consultations = consultationService.findAll();
+    public ResponseEntity<List<ConsultationResponseDTO>> findAll() {
+        List<ConsultationResponseDTO> consultations = consultationService.findAll();
         return ResponseEntity.ok().body(consultations);
     }
 
     @GetMapping (value = "/{id}")
-    public ResponseEntity<Consultation> findById(@PathVariable Long id) {
-        Consultation consultation = consultationService.findById(id);
+    public ResponseEntity<ConsultationResponseDTO> findById(@PathVariable Long id) {
+        ConsultationResponseDTO consultation = consultationService.findById(id);
         return ResponseEntity.ok().body(consultation);
     }
 
     @PostMapping
-    public ResponseEntity<Consultation> insert(@RequestBody Consultation obj) {
-        obj = consultationService.insert(obj);
+    public ResponseEntity<ConsultationResponseDTO> insert(@RequestBody ConsultationRequestDTO dto) {
+        ConsultationResponseDTO obj = consultationService.insert(dto);
         URI uri = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(obj.getId())
@@ -45,8 +46,8 @@ public class ConsultationResource {
     }
 
     @PutMapping(value = "/{id}")
-    public ResponseEntity<Consultation> update(@PathVariable Long id, @RequestBody Consultation obj) {
-        obj = consultationService.update(id, obj);
+    public ResponseEntity<ConsultationResponseDTO> update(@PathVariable Long id, @RequestBody ConsultationRequestDTO dto) {
+        ConsultationResponseDTO obj  = consultationService.update(id, dto);
         return ResponseEntity.ok().body(obj);
     }
 }

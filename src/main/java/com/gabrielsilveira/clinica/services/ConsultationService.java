@@ -1,6 +1,10 @@
 package com.gabrielsilveira.clinica.services;
 
+import com.gabrielsilveira.clinica.dto.ConsultationRequestDTO;
+import com.gabrielsilveira.clinica.dto.ConsultationResponseDTO;
+import com.gabrielsilveira.clinica.entities.Appointment;
 import com.gabrielsilveira.clinica.entities.Consultation;
+import com.gabrielsilveira.clinica.repositories.AppointmentRepository;
 import com.gabrielsilveira.clinica.repositories.ConsultationRepository;
 import com.gabrielsilveira.clinica.services.exceptions.DatabaseException;
 import com.gabrielsilveira.clinica.services.exceptions.ResourceNotFoundException;
@@ -18,17 +22,30 @@ public class ConsultationService {
     @Autowired
     private ConsultationRepository consultationRepository;
 
-    public List<Consultation> findAll() {
-        return consultationRepository.findAll();
+    @Autowired
+    private AppointmentRepository appointmentRepository;
+
+    public List<ConsultationResponseDTO> findAll() {
+        return consultationRepository.findAll()
+                .stream()
+                .map(ConsultationResponseDTO::new)
+                .toList();
     }
 
-    public Consultation findById(Long id) {
+    public ConsultationResponseDTO findById(Long id) {
         Optional<Consultation> obj = consultationRepository.findById(id);
-        return obj.orElseThrow(() -> new ResourceNotFoundException(id));
+        Consultation consultation = obj.orElseThrow(() -> new ResourceNotFoundException(id));
+        return new ConsultationResponseDTO(consultation);
     }
 
-    public Consultation insert(Consultation obj) {
-        return consultationRepository.save(obj);
+    public ConsultationResponseDTO insert(ConsultationRequestDTO dto) {
+        Consultation consultation = new Consultation();
+        consultation.setDiagnosis( dto.getDiagnosis());
+        consultation.setPrescription(dto.getPrescription());
+        Appointment appointment = appointmentRepository.getReferenceById(dto.getAppointmentId());
+        consultation.setAppointment(appointment);
+        consultation =  consultationRepository.save(consultation);
+        return new ConsultationResponseDTO(consultation);
     }
 
     public void delete (Long id) {
@@ -41,18 +58,14 @@ public class ConsultationService {
         }
     }
 
-    public Consultation update(Long id, Consultation obj) {
+    public ConsultationResponseDTO update(Long id, ConsultationRequestDTO dto) {
         try {
             Consultation consultation = consultationRepository.getReferenceById(id);
-            updateData(consultation, obj);
-            return consultationRepository.save(consultation);
+            consultation.setDiagnosis(dto.getDiagnosis());
+            consultation.setPrescription(dto.getPrescription());
+            return new ConsultationResponseDTO(consultationRepository.save(consultation));
         } catch (EntityNotFoundException e) {
             throw new ResourceNotFoundException(id);
         }
-    }
-
-    private void updateData(Consultation consultation, Consultation obj) {
-        consultation.setDiagnosis(obj.getDiagnosis());
-        consultation.setPrescription(obj.getPrescription());
     }
 }
