@@ -13,10 +13,11 @@ A RESTful web service built with Spring Boot and JPA/Hibernate that models the c
 5. [Prerequisites](#5-prerequisites)
 6. [Configuration & Profiles](#6-configuration--profiles)
 7. [Running the Application](#7-running-the-application)
-8. [REST API](#8-rest-api)
-9. [Error Handling](#9-error-handling)
-10. [Database Seeding](#10-database-seeding)
-11. [Roadmap / Possible Improvements](#11-roadmap--possible-improvements)
+8. [Running with Docker](#8-running-with-docker)
+9. [REST API](#9-rest-api)
+10. [Error Handling](#10-error-handling)
+11. [Database Seeding](#11-database-seeding)
+12. [Roadmap / Possible Improvements](#12-roadmap--possible-improvements)
 
 ---
 
@@ -30,6 +31,7 @@ A RESTful web service built with Spring Boot and JPA/Hibernate that models the c
 | Database (test)  | H2 (in-memory)                                  |
 | Database (prod)  | PostgreSQL                                      |
 | Build Tool       | Maven                                           |
+| Containerization | Docker (multi-stage build)                      |
 | JSON             | Jackson                                         |
 
 ---
@@ -145,6 +147,7 @@ src/
 - **JDK 21+**
 - **Maven 3.8+** (or use the Maven Wrapper included in the project)
 - For the production profile only: **PostgreSQL 12+** with a database named `clinic_db` on `localhost:5432`
+- For containerized execution: **Docker** installed and running
 
 ---
 
@@ -204,7 +207,33 @@ On startup (test profile), seed data is automatically inserted: 2 patients, 3 sp
 
 ---
 
-## 8. REST API
+## 8. Running with Docker
+
+The application is fully containerized with a multi-stage `Dockerfile`, and the image is published on Docker Hub. The build compiles the project with Maven in a first stage and copies only the resulting `.jar` into a lightweight JRE image for runtime, keeping the final image small.
+
+### Option 1 — Pull the image from Docker Hub
+
+```bash
+docker pull gabrielsilveira1/clinica-medica:latest
+docker run -p 8080:8080 gabrielsilveira1/clinica-medica:latest
+```
+
+### Option 2 — Build the image locally
+
+```bash
+docker build -t clinica-medica .
+docker run -p 8080:8080 clinica-medica
+```
+
+The API will be available at `http://localhost:8080`.
+
+The container runs with the `test` profile (H2 in-memory database), so no external database is required. Seed data is populated automatically on startup.
+
+**Docker Hub:** [gabrielsilveira1/clinica-medica](https://hub.docker.com/r/gabrielsilveira1/clinica-medica)
+
+---
+
+## 9. REST API
 
 Base URL: `http://localhost:8080`
 
@@ -350,7 +379,7 @@ Content-Type: application/json
 
 ---
 
-## 9. Error Handling
+## 10. Error Handling
 
 All domain exceptions are intercepted by `ResourceExceptionHandler` (`@ControllerAdvice`) and returned as a consistent JSON payload.
 
@@ -375,7 +404,7 @@ All domain exceptions are intercepted by `ResourceExceptionHandler` (`@Controlle
 
 ---
 
-## 10. Database Seeding
+## 11. Database Seeding
 
 When running under the `test` profile, `TestConfig` populates the H2 database on startup with the following data:
 
@@ -392,7 +421,7 @@ This allows you to immediately test all endpoints after startup without manual d
 
 ---
 
-## 11. Roadmap / Possible Improvements
+## 12. Roadmap / Possible Improvements
 
 - **Validation** — apply `@Valid` and Bean Validation annotations on request payloads
 - **Security** — add authentication and authorization with Spring Security + JWT
